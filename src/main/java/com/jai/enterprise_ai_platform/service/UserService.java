@@ -1,7 +1,9 @@
 package com.jai.enterprise_ai_platform.service;
 
+import com.jai.enterprise_ai_platform.dto.UserRequest;
 import com.jai.enterprise_ai_platform.entity.User;
 import com.jai.enterprise_ai_platform.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,12 +15,18 @@ import java.util.Optional;
 @Transactional
 public class UserService {
 	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
 
-	public UserService(UserRepository userRepository) {
+	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
 		this.userRepository = userRepository;
+		this.passwordEncoder = passwordEncoder;
 	}
 
-	public User save(User user) {
+	public User save(UserRequest request) {
+		User user = new User();
+		user.setName(request.name());
+		user.setEmail(request.email());
+		user.setPassword(passwordEncoder.encode(request.password()));
 		return userRepository.save(user);
 	}
 
@@ -32,11 +40,11 @@ public class UserService {
 		return userRepository.findById(id);
 	}
 
-	public Optional<User> update(UUID id, User updatedUser) {
+	public Optional<User> update(UUID id, UserRequest request) {
 		return userRepository.findById(id).map(user -> {
-			user.setName(updatedUser.getName());
-			user.setEmail(updatedUser.getEmail());
-			user.setPassword(updatedUser.getPassword());
+			user.setName(request.name());
+			user.setEmail(request.email());
+			user.setPassword(passwordEncoder.encode(request.password()));
 			return userRepository.save(user);
 		});
 	}

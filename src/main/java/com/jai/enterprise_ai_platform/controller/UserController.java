@@ -43,12 +43,12 @@ public class UserController {
 
     @PostMapping("/api/users")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
-        return ResponseEntity.status(201).body(toResponse(userService.save(toEntity(request))));
+        return ResponseEntity.status(201).body(toResponse(userService.save(request)));
     }
 
     @PutMapping("/api/users/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequest request) {
-        return userService.update(id, toEntity(request))
+        return userService.update(id, request)
                 .map(UserController::toResponse)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new UserNotFoundException(id));
@@ -60,14 +60,6 @@ public class UserController {
             throw new UserNotFoundException(id);
         }
         return ResponseEntity.noContent().build();
-    }
-
-    private static User toEntity(UserRequest request) {
-        User user = new User();
-        user.setName(request.name());
-        user.setEmail(request.email());
-        user.setPassword(request.password());
-        return user;
     }
 
     private static UserResponse toResponse(User user) {
