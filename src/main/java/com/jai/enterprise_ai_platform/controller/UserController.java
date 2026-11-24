@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import com.jai.enterprise_ai_platform.entity.User;
+import com.jai.enterprise_ai_platform.dto.ApiResponse;
 import com.jai.enterprise_ai_platform.dto.UserRequest;
 import com.jai.enterprise_ai_platform.dto.UserResponse;
 import com.jai.enterprise_ai_platform.exception.UserNotFoundException;
 import com.jai.enterprise_ai_platform.service.UserService;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,28 +31,33 @@ public class UserController {
     }
 
 	@GetMapping("/api/users")
-    public ResponseEntity<List<UserResponse>> getUsers() {
-        return ResponseEntity.ok(userService.findAll().stream().map(UserController::toResponse).toList());
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
+        List<UserResponse> users = userService.findAll().stream().map(UserController::toResponse).toList();
+        return ResponseEntity.ok(success("Users retrieved successfully", users));
 	}
 
     @GetMapping("/api/users/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
         return userService.findById(id)
                 .map(UserController::toResponse)
-                .map(ResponseEntity::ok)
+                .map(user -> ResponseEntity.ok(success("User retrieved successfully", user)))
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @PostMapping("/api/users")
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
-        return ResponseEntity.status(201).body(toResponse(userService.save(request)));
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest request) {
+        UserResponse user = toResponse(userService.save(request));
+        return ResponseEntity.status(201).body(success("User created successfully", user));
     }
 
     @PutMapping("/api/users/{id}")
-    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable UUID id,
+            @Valid @RequestBody UserRequest request
+    ) {
         return userService.update(id, request)
                 .map(UserController::toResponse)
-                .map(ResponseEntity::ok)
+                .map(user -> ResponseEntity.ok(success("User updated successfully", user)))
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
@@ -64,5 +71,9 @@ public class UserController {
 
     private static UserResponse toResponse(User user) {
         return new UserResponse(user.getId(), user.getName(), user.getEmail());
+    }
+
+    private static <T> ApiResponse<T> success(String message, T data) {
+        return new ApiResponse<>(Instant.now(), message, data);
     }
 }
